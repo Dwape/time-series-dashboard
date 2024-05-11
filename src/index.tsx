@@ -12,3 +12,8 @@ root.render(
     <App />
   </StrictMode>
 );
+/*
+root.render(
+  <App />
+);
+*/
