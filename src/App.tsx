@@ -3,7 +3,7 @@ import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
 import { useState, useRef, useEffect } from 'react';
 import { Socket, SeriesInfo, SeriesInfoList, SeriesUpdate } from './socket'
-// import { socket } from './socket';
+import TimeSeries from './TimeSeries';
 
 export default function App() {
   const [isConnected, setIsConnected] = useState(false); // Can we check if we are connected in the socket?
@@ -28,10 +28,6 @@ export default function App() {
       setSeriesList(data.series);
     }
 
-    function onSeriesUpdate(data: SeriesUpdate[]) {
-      // This should most likely be handled by child components
-    }
-
     const socket = new Socket(onConnect, onDisconnect, onSeriesList);
 
     ws.current = socket;
@@ -49,20 +45,6 @@ export default function App() {
     return () => {}; // What should we return if we have to do nothing?
   }, [isConnected]);
 
-  /*
-  Starts receiving information from the specified series.
-  */
-  function handleStart(seriesId: number) {
-
-  }
-
-  /*
-  Stops receiving information from the specified series.
-  */
-  function handleStop(seriesId: number) {
-
-  }
-
   return (<>
     <Navbar expand="lg" className="bg-body-tertiary">
       <Container>
@@ -72,7 +54,7 @@ export default function App() {
               <ConnectionIndicator connected={isConnected}/>
             </Navbar.Text>
             <Navbar.Text>
-              <ThroughputIndicator throughput={10.34}></ThroughputIndicator>
+              <ThroughputIndicator messageAmount={50} socket={ws.current}></ThroughputIndicator>
             </Navbar.Text>
           </Nav>
       </Container>
@@ -93,61 +75,41 @@ function ConnectionIndicator( { connected }: { connected: boolean } ) {
   return (<h6>{connected ? '🟢' : '🔴'}</h6>); // We could add icons to make this look a bit nicer.
 }
 
-function ThroughputIndicator( { throughput }: { throughput: number}) { // What type should throughput have?
-  const throughputUnit: string = 'messages/millisecond'; // This could be passed as a prop
-  return (<h6>{throughput} {throughputUnit}</h6>);
-}
+// We should move this to another file
+function ThroughputIndicator( { messageAmount, socket }: { messageAmount: number, socket: Socket | null}) { // What type should throughput have?
+  const throughputUnit: string = 'messages/millisecond'; // This should be nicer and depend on the calculation.
+  const [timestamps, setTimestamps] = useState<number[]>([]);
 
-// This could be split into several components later on
-// It should probably be moved to another file.
-
-// Try to find a way to ensure socket is not null so we don't have to add the checks everywhere.
-function TimeSeries( { seriesId, seriesName, socket }: { seriesId: number, seriesName: string, socket: Socket | null} ) {
-  const [updates, setUpdates] = useState<SeriesUpdate[]>([]);
-  const [active, setActive] = useState(false);
+  const throughput = calculateThroughput();
 
   useEffect(() => {
 
-    /*
-    Starts receiving information from the specified series.
-    */
-    function handleStart(seriesId: number) {
-      if (!active && socket !== null) {
-        socket.subscribeToUpdate(seriesId, onSeriesUpdate);
-        setActive(true);
+    function handleMessage(timestamp: number) {
+      let newTimestamps = timestamps;
+      if (timestamps.length >= messageAmount) {
+        // We need to remove the first messages.
+        const removeAmount = timestamps.length - messageAmount + 1;
+        newTimestamps = timestamps.slice(removeAmount);
       }
+      setTimestamps([...newTimestamps, timestamp]);
     }
 
-    /*
-    Stops receiving information from the specified series.
-    */
-    function handleStop(seriesId: number) {
-      if (active && socket !== null) {
-        socket.unsubscribeToUpdate(seriesId);
-        setActive(false);
-      }
-    }
-
-    function onSeriesUpdate(update: SeriesUpdate) {
-      // This should most likely be handled by child components
-      // To test, we'll only keep a single value.
-      // Change to keep a custom quantity of values.
-      setUpdates([update]);
-    }
-
-    // Where should the seriesId be stored? Is it fine for it to be a prop
-    
-    handleStart(seriesId); // The component would start subscribed.
+    socket?.subscribeToThroughput(handleMessage);
 
     return () => {
-      if (socket !== null) socket.unsubscribeToUpdate(seriesId);
+      socket?.unsubscribeToThroughput();
     };
-  }, []); // We could add seriesId to redraw if the seriesId is changed.
+  }, []);
 
-  return (
-    <div>
-      <h4>{seriesName}</h4>
-      <h6>{(updates.length > 0) ? updates[0].value : ''}</h6>
-    </div>
-  );
+  // Calculate throughput (one millisecond === one million nanoseconds)
+  // Take the last 50 messages
+  // n / ((last timestamp - first timestamp) / 1,000,000)
+  // n should be the length of the array in this case in case it is not yet full.
+  function calculateThroughput(): number {
+    const timestampDelta = timestamps[timestamps.length - 1] - timestamps[0];
+    const received = timestamps.length;
+    return received / (timestampDelta / 1000000); // This number shouldn't be hardcoded, right?
+  }
+
+  return (<h6>{throughput} {throughputUnit}</h6>);
 }

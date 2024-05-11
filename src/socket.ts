@@ -6,6 +6,8 @@ export class Socket {
     ws: WebSocket;
     // Is SeriesUpdate a list or individual updates?
     updateSubscribers: Map<number, (update: SeriesUpdate) => void>;
+    // For now we have a single one, but we could have several
+    throughputSubscriber: (timestamp: number) => void;
 
     // What should be the type of the event received?
     constructor(
@@ -37,10 +39,13 @@ export class Socket {
                 if (this.updateSubscribers.has(id)) {
                     this.updateSubscribers.get(id)!(message); // How do we convince TypeScript this is not undefined?
                 }
+                // We are only counting updates for the throughput, this should we okay.
+                this.throughputSubscriber(message.timestamp);
             }
         }
 
-        this.updateSubscribers = new Map<number, (update: SeriesUpdate) => void>()
+        this.updateSubscribers = new Map<number, (update: SeriesUpdate) => void>();
+        this.throughputSubscriber = () => {};
     }
 
     retrieveSeriesList() {
@@ -66,6 +71,14 @@ export class Socket {
         if (this.ws.readyState === this.ws.OPEN) {
             this.stopStream(seriesId);
         }
+    }
+
+    subscribeToThroughput(notify: (timestamp: number) => void) {
+        this.throughputSubscriber = notify;
+    }
+
+    unsubscribeToThroughput() {
+        this.throughputSubscriber = () => {}; // We could assign null as its value.
     }
 
     // We could change this to not use the strings directly.
