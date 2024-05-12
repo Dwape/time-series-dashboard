@@ -40,7 +40,7 @@ export class Socket {
                     this.updateSubscribers.get(id)!(message); // How do we convince TypeScript this is not undefined?
                 }
                 // We are only counting updates for the throughput, this should we okay.
-                this.throughputSubscriber(message.timestamp);
+                this.throughputSubscriber(message.ts);
             }
         }
 

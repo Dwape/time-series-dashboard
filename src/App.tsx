@@ -2,8 +2,9 @@ import Container from 'react-bootstrap/Container';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
 import { useState, useRef, useEffect } from 'react';
-import { Socket, SeriesInfo, SeriesInfoList, SeriesUpdate } from './socket'
+import { Socket, SeriesInfo, SeriesInfoList } from './socket'
 import TimeSeries from './TimeSeries';
+import ThroughputIndicator from './ThroughputIndicator';
 
 export default function App() {
   const [isConnected, setIsConnected] = useState(false); // Can we check if we are connected in the socket?
@@ -59,7 +60,7 @@ export default function App() {
           </Nav>
       </Container>
     </Navbar>
-    <ul>
+    <ul style={{listStyleType: 'none'}}>
       {seriesList.map((series: SeriesInfo) => {
         return (
           <li key={series.seriesId}>
@@ -73,43 +74,4 @@ export default function App() {
 
 function ConnectionIndicator( { connected }: { connected: boolean } ) {
   return (<h6>{connected ? '🟢' : '🔴'}</h6>); // We could add icons to make this look a bit nicer.
-}
-
-// We should move this to another file
-function ThroughputIndicator( { messageAmount, socket }: { messageAmount: number, socket: Socket | null}) { // What type should throughput have?
-  const throughputUnit: string = 'messages/millisecond'; // This should be nicer and depend on the calculation.
-  const [timestamps, setTimestamps] = useState<number[]>([]);
-
-  const throughput = calculateThroughput();
-
-  useEffect(() => {
-
-    function handleMessage(timestamp: number) {
-      let newTimestamps = timestamps;
-      if (timestamps.length >= messageAmount) {
-        // We need to remove the first messages.
-        const removeAmount = timestamps.length - messageAmount + 1;
-        newTimestamps = timestamps.slice(removeAmount);
-      }
-      setTimestamps([...newTimestamps, timestamp]);
-    }
-
-    socket?.subscribeToThroughput(handleMessage);
-
-    return () => {
-      socket?.unsubscribeToThroughput();
-    };
-  }, []);
-
-  // Calculate throughput (one millisecond === one million nanoseconds)
-  // Take the last 50 messages
-  // n / ((last timestamp - first timestamp) / 1,000,000)
-  // n should be the length of the array in this case in case it is not yet full.
-  function calculateThroughput(): number {
-    const timestampDelta = timestamps[timestamps.length - 1] - timestamps[0];
-    const received = timestamps.length;
-    return received / (timestampDelta / 1000000); // This number shouldn't be hardcoded, right?
-  }
-
-  return (<h6>{throughput} {throughputUnit}</h6>);
 }
