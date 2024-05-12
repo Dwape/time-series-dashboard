@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Socket, SeriesUpdate } from './socket'
 import Button from 'react-bootstrap/Button';
 import { Line } from 'react-chartjs-2';
+import { chartOptions } from './options';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -13,7 +14,6 @@ import {
     Legend,
 } from 'chart.js';
 
-// What is this for?
 ChartJS.register(
     CategoryScale,
     LinearScale,
@@ -40,7 +40,7 @@ export default function TimeSeries( { seriesId, seriesName, socket }: { seriesId
       return () => {
         if (socket !== null) socket.unsubscribeToUpdate(seriesId);
       };
-    }, []); // We could add seriesId to redraw if the seriesId is changed.
+    }, []);
 
     function onSeriesUpdate(update: SeriesUpdate) {
      // Parse time to correct format
@@ -61,6 +61,21 @@ export default function TimeSeries( { seriesId, seriesName, socket }: { seriesId
         return `${date.toLocaleTimeString([], { hour12: false })}.${millis}`;
     }
 
+    /*
+    Calculate the average of graphed values avoiding an overflow if values are close to the maximum allowed value.
+    */
+    function calculateAverage(): number {
+        /*
+        if (data.values.length < 1) return 0;
+        return data.values.reduce((a, b) => a + b, 0) / data.values.length;
+        */
+        let average = 0;
+        data.values.forEach((value, index) => {
+            average += (value - average) / (index + 1);
+        })
+        return average;
+    }
+
     // This is the structure of the data for the chart.
     // We should make the x axis start at 0, because otherwise the graph moves around too much
     
@@ -68,11 +83,10 @@ export default function TimeSeries( { seriesId, seriesName, socket }: { seriesId
         labels: data.times,
         datasets: [
             {
-                label: 'price',
+                label: 'value',
                 data: data.values,
                 fill: false,
-                borderColor: 'rgb(75, 192, 192)',
-                tension: 0
+                borderColor: 'rgb(75, 192, 192)', // Style should be set elsewhere
             }
         ]
     }
@@ -91,10 +105,9 @@ export default function TimeSeries( { seriesId, seriesName, socket }: { seriesId
     return (
       <div>
         <h4>{seriesName}</h4>
-        <h6>{(data.values.length > 0) ? data.values[data.values.length - 1] : ''}</h6>
-        <h6>Length: {data.times.length}</h6>
+        <h6>Average: {calculateAverage().toLocaleString([], {maximumFractionDigits: 3})}</h6>
         <Button onClick={handleToggle}>{active? 'Pause' : 'Play'}</Button>
-        <Line options={options} data={parsedData} />
+        <Line options={chartOptions} data={parsedData} />
       </div>
     );
 }
@@ -106,35 +119,3 @@ type ChartData = {
     times: string[],
     values: number[]
 }
-
-// Move to another file
-export const options = {
-    responsive: true,
-    plugins: {
-      legend: {
-        display: false,
-      },
-      title: {
-        display: false,
-        text: 'Chart.js Line Chart',
-      },
-    },
-    scales: {
-        y: {
-            beginAtZero: true
-        },
-        x: {
-            grid: {
-              display: false
-            }
-        },
-    },
-    animation: {
-        duration: 0
-    },
-    elements: {
-        point:{
-            radius: 0
-        }
-    }
-};

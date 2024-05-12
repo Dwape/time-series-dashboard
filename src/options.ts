@@ -1,4 +1,3 @@
-// Move to another file
 export const chartOptions = {
     responsive: true,
     plugins: {
