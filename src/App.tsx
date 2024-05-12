@@ -1,3 +1,4 @@
+import './styles.css'
 import Container from 'react-bootstrap/Container';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
@@ -5,6 +6,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Socket, SeriesInfo, SeriesInfoList } from './socket'
 import TimeSeries from './TimeSeries';
 import ThroughputIndicator from './ThroughputIndicator';
+import { FaCircle, FaChartLine } from "react-icons/fa";
 
 export default function App() {
   const [isConnected, setIsConnected] = useState(false); // Can we check if we are connected in the socket?
@@ -46,32 +48,34 @@ export default function App() {
     return () => {}; // What should we return if we have to do nothing?
   }, [isConnected]);
 
+  // expand="lg" in Navbar
   return (<>
-    <Navbar expand="lg" className="bg-body-tertiary">
+    <Navbar sticky="top" className="bg-body-tertiary">
       <Container>
-        <Navbar.Brand href="">TimeSeries Dashboard</Navbar.Brand>
-        <Nav className="me-auto">
-            <Navbar.Text>
-              <ConnectionIndicator connected={isConnected}/>
-            </Navbar.Text>
-            <Navbar.Text>
-              <ThroughputIndicator messageAmount={50} socket={ws.current}></ThroughputIndicator>
-            </Navbar.Text>
-          </Nav>
+        <Navbar.Brand href="">
+          <FaChartLine id="logo"/>{' '}
+          TimeSeries Dashboard
+        </Navbar.Brand>
+        <Navbar.Collapse className="justify-content-end">
+          <Navbar.Text>
+            <ConnectionIndicator connected={isConnected}/>
+          </Navbar.Text>
+          <Navbar.Text>
+            <ThroughputIndicator messageAmount={50} socket={ws.current}></ThroughputIndicator>
+          </Navbar.Text>
+        </Navbar.Collapse>
       </Container>
     </Navbar>
-    <ul style={{listStyleType: 'none'}}>
-      {seriesList.map((series: SeriesInfo) => {
-        return (
-          <li key={series.seriesId}>
-            <TimeSeries seriesId={series.seriesId} seriesName={series.name} socket={ws.current}></TimeSeries>
-          </li>
-          )
-      })}
-    </ul>
+    {seriesList.map((series: SeriesInfo) => {
+      return (
+        <div key={series.seriesId}>
+          <TimeSeries seriesId={series.seriesId} seriesName={series.name} socket={ws.current}></TimeSeries>
+        </div>
+      )
+    })}
   </>);
 }
 
 function ConnectionIndicator( { connected }: { connected: boolean } ) {
-  return (<h6>{connected ? '🟢' : '🔴'}</h6>); // We could add icons to make this look a bit nicer.
+  return (<FaCircle id="connection" className={connected? 'connected' : 'disconnected'}/>);
 }

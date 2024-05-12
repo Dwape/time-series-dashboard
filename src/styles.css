@@ -1,0 +1,45 @@
+.connected {
+    color: rgb(56, 222, 41);
+}
+
+.disconnected {
+    color: rgb(227, 10, 10);
+}
+
+#logo {
+    font-size: 1.5em;
+}
+
+#connection {
+    margin-right: 0.5em;
+    margin-left: 0.5em;
+}
+
+#throughput {
+    font-family: monospace;
+}
+
+.time-series {
+    margin: 2rem;
+}
+
+.chart-header {
+    display: flex;
+    margin-bottom: 1em;
+}
+
+.chart-button {
+    margin-left: auto;
+    width: 4em;
+}
+
+.average {
+    margin-left: 1em;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+}
+
+.button-icon {
+    font-size: 0.9em;
+}

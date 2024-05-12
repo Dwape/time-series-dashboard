@@ -50,7 +50,9 @@ export class Socket {
 
     retrieveSeriesList() {
         // this.ws.send('{"command": "listSeries"}');
-        this.ws.send(JSON.stringify(listSeriesCommand));
+        if (this.ws.readyState === this.ws.OPEN) {
+            this.ws.send(JSON.stringify(listSeriesCommand));
+        }
     }
 
     // We could add the option for several subscribers per seriesId, but that would require more logic.

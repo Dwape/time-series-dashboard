@@ -3,6 +3,7 @@ import { Socket, SeriesUpdate } from './socket'
 import Button from 'react-bootstrap/Button';
 import { Line } from 'react-chartjs-2';
 import { chartOptions } from './options';
+import { FaPlay, FaPause } from "react-icons/fa"; 
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -32,10 +33,12 @@ export default function TimeSeries( { seriesId, seriesName, socket }: { seriesId
   
     useEffect(() => {
       
+      /*
       if (socket !== null) {
         socket.subscribeToUpdate(seriesId, onSeriesUpdate);
         setActive(true); 
       }
+      */
   
       return () => {
         if (socket !== null) socket.unsubscribeToUpdate(seriesId);
@@ -103,10 +106,14 @@ export default function TimeSeries( { seriesId, seriesName, socket }: { seriesId
     }
   
     return (
-      <div>
-        <h4>{seriesName}</h4>
-        <h6>Average: {calculateAverage().toLocaleString([], {maximumFractionDigits: 3})}</h6>
-        <Button onClick={handleToggle}>{active? 'Pause' : 'Play'}</Button>
+      <div className="time-series">
+        <div className="chart-header">
+            <h3>{seriesName}</h3>
+            <span className="average">Average: ${calculateAverage().toLocaleString([], {maximumFractionDigits: 3})}</span>
+            <Button onClick={handleToggle} className="chart-button">
+                {active ? <FaPause className="button-icon"/> : <FaPlay className="button-icon"/>}
+            </Button>
+        </div>
         <Line options={chartOptions} data={parsedData} />
       </div>
     );

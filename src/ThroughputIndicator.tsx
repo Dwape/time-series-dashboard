@@ -41,5 +41,7 @@ export default function ThroughputIndicator( { messageAmount, socket }: { messag
     }
   
     // Value should be separated from the unit to avoid the unit moving when the display size of the number changes.
-    return (<h6>{throughput.toFixed(2)} {throughputUnit}</h6>);
+    return (
+        <div id="throughput">{throughput.toFixed(2)} {throughputUnit}</div>
+    );
   }
