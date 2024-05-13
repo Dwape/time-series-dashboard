@@ -3,7 +3,8 @@ import { Socket, SeriesUpdate } from './socket'
 import Button from 'react-bootstrap/Button';
 import { Line } from 'react-chartjs-2';
 import { chartOptions } from './options';
-import { FaPlay, FaPause } from "react-icons/fa"; 
+import { FaPlay, FaPause } from "react-icons/fa";
+import { dataSize } from './options';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -25,34 +26,37 @@ ChartJS.register(
     Legend
 );
 
-// Try to find a way to ensure socket is not null so we don't have to add the checks everywhere.
-export default function TimeSeries( { seriesId, seriesName, socket }: { seriesId: number, seriesName: string, socket: Socket | null} ) {
-    // Data is saved in a convenient format for display, so that it won't have to be calculated every render.
-    const [data, setData] = useState<ChartData>({times: [], values: []});
+/*
+A component which displays a chart with updating values and its associated information.
+*/
+export default function TimeSeries({ seriesId, seriesName, socket, startActive }: { seriesId: number, seriesName: string, socket: Socket | null, startActive: boolean }) {
+    // Data is saved in a convenient, normalized format for display, so that it won't have to be calculated every render.
+    const [data, setData] = useState<DataPoint[]>([]);
     const [active, setActive] = useState(false);
-  
-    useEffect(() => {
-      
-      /*
-      if (socket !== null) {
-        socket.subscribeToUpdate(seriesId, onSeriesUpdate);
-        setActive(true); 
-      }
-      */
-  
-      return () => {
-        if (socket !== null) socket.unsubscribeToUpdate(seriesId);
-      };
-    }, []);
 
+    useEffect(() => {
+        // Subscribes to updates on mount.
+        if (startActive && socket !== null) {
+            socket.subscribeToUpdate(seriesId, onSeriesUpdate);
+            setActive(true);
+        }
+
+        return () => {
+            if (socket !== null) socket.unsubscribeToUpdate(seriesId);
+        };
+    }, [socket]);
+
+    /*
+    Updates chart data.
+    The data stored in the state is already in the format used by the chart, meaning no additional parsing is required.
+    */
     function onSeriesUpdate(update: SeriesUpdate) {
-     // Parse time to correct format
-     const time = parseTime(update.ts);
-      setData(({times, values} : {times: string[], values: number[]}) => {
-        const newTimes = (times.length < dataSize) ? [...times, time] : [...(times.slice(times.length - dataSize + 1)), time];
-        const newValues = (values.length < dataSize) ? [...values, update.value] : [...(values.slice(values.length - dataSize + 1)), update.value];
-        return {times: newTimes, values: newValues};
-      })
+        // Parse time to correct format.
+        const time = parseTime(update.ts);
+        setData((data: DataPoint[]) => {
+            if (data.length < dataSize) return [...data, { x: time, y: update.value }];
+            return [...data.slice(data.length - dataSize + 1), { x: time, y: update.value }];
+        })
     }
 
     /*
@@ -60,7 +64,7 @@ export default function TimeSeries( { seriesId, seriesName, socket }: { seriesId
     */
     function parseTime(ts: number): string {
         const date = new Date(ts / 1000000); // Divide by 1,000,000 because it's in nanoseconds.
-        const millis = (date.getMilliseconds()).toLocaleString([], {minimumIntegerDigits: 3, useGrouping:false}) // Append zeros if necessary
+        const millis = (date.getMilliseconds()).toLocaleString([], { minimumIntegerDigits: 3, useGrouping: false }) // Append zeros if necessary
         return `${date.toLocaleTimeString([], { hour12: false })}.${millis}`;
     }
 
@@ -73,25 +77,19 @@ export default function TimeSeries( { seriesId, seriesName, socket }: { seriesId
         return data.values.reduce((a, b) => a + b, 0) / data.values.length;
         */
         let average = 0;
-        data.values.forEach((value, index) => {
-            average += (value - average) / (index + 1);
+        data.forEach((dataPoint, index) => {
+            average += (dataPoint.y - average) / (index + 1);
         })
         return average;
     }
 
-    // This is the structure of the data for the chart.
-    // We should make the x axis start at 0, because otherwise the graph moves around too much
-    
+    // Data structured as the chart requires.
     const parsedData = {
-        labels: data.times,
-        datasets: [
-            {
-                label: 'value',
-                data: data.values,
-                fill: false,
-                borderColor: 'rgb(75, 192, 192)', // Style should be set elsewhere
-            }
-        ]
+        datasets: [{
+            data: data,
+            fill: false,
+            borderColor: 'rgb(75, 192, 192)', // Style should be set elsewhere
+        }]
     }
 
     /*
@@ -104,25 +102,22 @@ export default function TimeSeries( { seriesId, seriesName, socket }: { seriesId
             setActive(a => !a);
         }
     }
-  
+
     return (
-      <div className="time-series">
-        <div className="chart-header">
-            <h3>{seriesName}</h3>
-            <span className="average">Average: ${calculateAverage().toLocaleString([], {maximumFractionDigits: 3})}</span>
-            <Button onClick={handleToggle} className="chart-button">
-                {active ? <FaPause className="button-icon"/> : <FaPlay className="button-icon"/>}
-            </Button>
+        <div className="time-series">
+            <div className="chart-header">
+                <h3>{seriesName}</h3>
+                <span className="average">Average: ${calculateAverage().toLocaleString([], { maximumFractionDigits: 3 })}</span>
+                <Button onClick={handleToggle} className="chart-button">
+                    {active ? <FaPause className="button-icon" /> : <FaPlay className="button-icon" />}
+                </Button>
+            </div>
+            <Line options={chartOptions} data={parsedData} />
         </div>
-        <Line options={chartOptions} data={parsedData} />
-      </div>
     );
 }
 
-// Default value is 60
-const dataSize = 1000; // This is too low, it is difficult to understand how the values are evolving.
-
-type ChartData = {
-    times: string[],
-    values: number[]
+type DataPoint = {
+    x: string,
+    y: number
 }

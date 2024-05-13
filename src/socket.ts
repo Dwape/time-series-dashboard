@@ -1,98 +1,112 @@
-// This file handles web socket connection logic.
+const url: string = `ws://${process.env.REACT_APP_ADDRESS}:${process.env.REACT_APP_PORT}/ws`
 
-const url: string = 'ws://35.199.81.113:3000/ws';
-
+/*
+A wrapper for the `WebSocket` class that adds application specific functionality.
+*/
 export class Socket {
     ws: WebSocket;
-    // Is SeriesUpdate a list or individual updates?
     updateSubscribers: Map<number, (update: SeriesUpdate) => void>;
-    // For now we have a single one, but we could have several
     throughputSubscriber: (timestamp: number) => void;
+    onMessage: (event: MessageEvent) => void;
 
-    // What should be the type of the event received?
     constructor(
         onConnect: () => void,
         onDisconnect: () => void,
         onSeriesList: (list: SeriesInfoList) => void) {
 
         this.ws = new WebSocket(url);
-        // We need to start the stream for any subscribers. (They could be registered before the connection is established)
+        // We need to start the stream for any subscribers who could have registered before the connection was established.
         this.ws.onopen = () => {
             this.updateSubscribers.forEach((_update, key: number) => {
-                this.startStream(key); // Check if this creates any problems.
+                this.startStream(key);
             });
             onConnect();
         }
 
-        this.ws.onclose = onDisconnect;
-        // Should we do something if we have a web socket error?
-        this.ws.onmessage = (event) => {
+        this.ws.onerror = onDisconnect; // Remove, only for testing.
+
+        /*
+        `onMessage` function which assumes all messages received are updates.
+        This avoids checking the type of the message everytime one is received.
+        */
+        const onFollowingMessages = (event: MessageEvent) => {
             const message = JSON.parse(event.data);
-            // We need to check what structure this object has to see what to do.
-            
-            // This is less than ideal, find a better way of doing this.
-            // Can we somehow 'cast' the message to an object we know?
-            if (Object.hasOwn(message, 'series')) {
-                onSeriesList(message); // This could fail, we have to find a better way.
-            } else {
-                const id = message.seriesId;
-                if (this.updateSubscribers.has(id)) {
-                    this.updateSubscribers.get(id)!(message); // How do we convince TypeScript this is not undefined?
-                }
-                // We are only counting updates for the throughput, this should we okay.
-                this.throughputSubscriber(message.ts);
+            this.updateSubscribers.get(message.seriesId)!(message);
+            this.throughputSubscriber(message.ts);
+        }
+
+        // `onMessage` function for the first message, which should contain a list with the different series.
+        this.onMessage = (event) => {
+            const message = JSON.parse(event.data);
+            if (isSeriesList(message)) {
+                // Fill the subscriber list with empty functions so that we can always call them, even if there are no real subscribers.
+                message.series.forEach((series) => {
+                    this.updateSubscribers.set(series.seriesId, () => { });
+                })
+                this.onMessage = onFollowingMessages;
+                onSeriesList(message);
             }
         }
 
+        this.ws.onclose = onDisconnect;
+        this.ws.onmessage = (event) => { this.onMessage(event) };
+
         this.updateSubscribers = new Map<number, (update: SeriesUpdate) => void>();
-        this.throughputSubscriber = () => {};
+        this.throughputSubscriber = () => { };
     }
 
+    /*
+    Sends a message requesting a list with all available series.
+    */
     retrieveSeriesList() {
-        // this.ws.send('{"command": "listSeries"}');
         if (this.ws.readyState === this.ws.OPEN) {
             this.ws.send(JSON.stringify(listSeriesCommand));
         }
     }
 
-    // We could add the option for several subscribers per seriesId, but that would require more logic.
-    // We would need to keep track of the different callback functions to be able to tell which one to delete when unsubscribing.
+    /*
+    Subscribes to updates for a specified `seriesId`.
+    A new subscriber will overwrite any previous subscriber for that same id.
+    When an update is received for the specified id, the `notify` function will be called.
+    */
     subscribeToUpdate(seriesId: number, notify: (update: SeriesUpdate) => void) {
-        // This might be problematic if executed twice, test.
-        // We could check if there already is a subscriber for that id, but what should we do then?
         this.updateSubscribers.set(seriesId, notify);
-        // We could also track ourselves if the connection is open.
         if (this.ws.readyState === this.ws.OPEN) {
             this.startStream(seriesId);
         }
     }
 
-    // We would need extra information to identify the one we are removing if there were many.
+    /*
+    Unsubscribes from updates from a specified `seriesId`.
+    */
     unsubscribeToUpdate(seriesId: number) {
-        this.updateSubscribers.delete(seriesId);
+        this.updateSubscribers.set(seriesId, () => { });
         if (this.ws.readyState === this.ws.OPEN) {
             this.stopStream(seriesId);
         }
     }
 
+    /*
+    Subscribes to be notified everytime any update is received.
+    */
     subscribeToThroughput(notify: (timestamp: number) => void) {
         this.throughputSubscriber = notify;
     }
 
+    /*
+    Unsubscribes from notifications for updates.
+    */
     unsubscribeToThroughput() {
-        this.throughputSubscriber = () => {}; // We could assign null as its value.
+        this.throughputSubscriber = () => { };
     }
 
-    // We could change this to not use the strings directly.
     private startStream(seriesId: number): void {
-        // this.ws.send(`{"start": true, "seriesId": ${seriesId}}`);
-        const command = {...startStreamCommand, seriesId: seriesId};
+        const command = { ...startStreamCommand, seriesId: seriesId };
         this.ws.send(JSON.stringify(command));
     }
 
     private stopStream(seriesId: number): void {
-        // this.ws.send(`{"start": false, "seriesId": ${seriesId}}`);
-        const command = {...stopStreamCommand, seriesId: seriesId};
+        const command = { ...stopStreamCommand, seriesId: seriesId };
         this.ws.send(JSON.stringify(command));
     }
 
@@ -105,17 +119,18 @@ export type SeriesInfoList = {
     series: SeriesInfo[]
 }
 
-// Somes types that could be useful to manage the data received from the web socket.
 export type SeriesInfo = {
     name: string,
-    seriesId: number // or just id? What type should this have?
+    seriesId: number
 }
-
-// Is it okay for all these to be numbers?
 export type SeriesUpdate = {
     ts: number, // timestamp
     seriesId: number,
     value: number
+}
+
+function isSeriesList(message: any): message is SeriesInfoList {
+    return 'series' in message;
 }
 
 const listSeriesCommand = {
@@ -124,7 +139,7 @@ const listSeriesCommand = {
 
 const startStreamCommand = {
     start: true,
-    seriesId: null // What should we make this value?
+    seriesId: null
 }
 
 const stopStreamCommand = {

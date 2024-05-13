@@ -8,13 +8,14 @@ import TimeSeries from './TimeSeries';
 import ThroughputIndicator from './ThroughputIndicator';
 import { FaCircle, FaChartLine } from "react-icons/fa";
 
+/*
+An application that connects to a WebSocket server and handles real-time stock-price updates.
+*/
 export default function App() {
-  const [isConnected, setIsConnected] = useState(false); // Can we check if we are connected in the socket?
-  // We should store both the series details and the latest updates.
+  const [isConnected, setIsConnected] = useState(false);
   const [seriesList, setSeriesList] = useState<SeriesInfo[]>([]);
 
-  // We need to be careful with the types here.
-  const ws = useRef<Socket | null>(null); // This might not be ideal, but we should have a reference to the socket in different places.
+  const ws = useRef<Socket | null>(null);
 
   // Runs once, when the component is mounted.
   useEffect(() => {
@@ -31,8 +32,10 @@ export default function App() {
       setSeriesList(data.series);
     }
 
+    // Create a new `Socket` object which connects to a web socket.
     const socket = new Socket(onConnect, onDisconnect, onSeriesList);
 
+    // Store a reference to the `Socket`.
     ws.current = socket;
 
     return () => {
@@ -41,24 +44,22 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    // Once we've connected, we should retrieve the existing series in the system. (Find out how to do this)
-    // Should we update this? How would we know when to update?
-    if (isConnected && ws.current !== null) ws.current.retrieveSeriesList(); // This could be improved.
+    // Once connected, retrieve the existing series in the system.
+    if (isConnected && ws.current !== null) ws.current.retrieveSeriesList();
 
-    return () => {}; // What should we return if we have to do nothing?
+    return () => { };
   }, [isConnected]);
 
-  // expand="lg" in Navbar
   return (<>
     <Navbar sticky="top" className="bg-body-tertiary">
       <Container>
         <Navbar.Brand href="">
-          <FaChartLine id="logo"/>{' '}
+          <FaChartLine className="logo" />{' '}
           TimeSeries Dashboard
         </Navbar.Brand>
         <Navbar.Collapse className="justify-content-end">
           <Navbar.Text>
-            <ConnectionIndicator connected={isConnected}/>
+            <ConnectionIndicator connected={isConnected} />
           </Navbar.Text>
           <Navbar.Text>
             <ThroughputIndicator messageAmount={50} socket={ws.current}></ThroughputIndicator>
@@ -69,13 +70,17 @@ export default function App() {
     {seriesList.map((series: SeriesInfo) => {
       return (
         <div key={series.seriesId}>
-          <TimeSeries seriesId={series.seriesId} seriesName={series.name} socket={ws.current}></TimeSeries>
+          <TimeSeries seriesId={series.seriesId} seriesName={series.name} socket={ws.current} startActive={false}></TimeSeries>
         </div>
       )
     })}
   </>);
 }
 
-function ConnectionIndicator( { connected }: { connected: boolean } ) {
-  return (<FaCircle id="connection" className={connected? 'connected' : 'disconnected'}/>);
+/*
+A simple indicator component with two states, connected or disconnected.
+Displays an icon with a different color for each state.
+*/
+function ConnectionIndicator({ connected }: { connected: boolean }) {
+  return (<FaCircle className={'connection' + (connected ? ' connected' : ' disconnected')} />);
 }
