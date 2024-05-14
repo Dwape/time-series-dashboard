@@ -20,6 +20,9 @@ export const chartOptions = {
         x: {
             grid: {
                 display: false
+            },
+            ticks: {
+                sampleSize: 1 // Uses one sample to figure out the size of the x axis (size is constant for all timestamps)
             }
         },
     },
@@ -35,8 +38,8 @@ export const chartOptions = {
         parsing: false, // Avoid parsing as data is already parsed into the format required by the chart.
         normalized: true // Date is already normalized.
     },
-    // spanGaps: true,
-    // events: [] // Remove hover listener
+    spanGaps: true,
+    // events: [], // Remove hover listener
 };
 
 const envSize: number = Number(process.env.REACT_APP_DATA_SIZE);
