@@ -1,3 +1,7 @@
+.app {
+    background-color: #FBFBFB;
+}
+
 .connected {
     color: rgb(47, 193, 34);
 }
@@ -22,12 +26,21 @@
 }
 
 .time-series {
-    margin: 2rem;
+    margin-top: 1em;
+    margin-bottom: 1em;
+    margin-left: 4em;
+    margin-right: 4em;
 }
 
 .chart-header {
     display: flex;
     margin-bottom: 1em;
+    margin-top: 0.5em;
+}
+
+.series-title {
+    margin-left: 1em;
+    font-weight: bold;
 }
 
 .chart-button {

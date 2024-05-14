@@ -50,32 +50,33 @@ export default function App() {
     return () => { };
   }, [isConnected]);
 
-  return (<>
-    <Navbar sticky="top" className="bg-dark navbar-dark">
-      <Container>
-        <Navbar.Brand href="">
-          <FaChartLine className="logo" />{' '}
-          TimeSeries Dashboard
-        </Navbar.Brand>
-        <Navbar.Collapse className="justify-content-end">
-          <Navbar.Text>
-            <ConnectionIndicator connected={isConnected} />
-          </Navbar.Text>
-          <Navbar.Text>
-            <ThroughputIndicator messageAmount={50} socket={ws.current}></ThroughputIndicator>
-          </Navbar.Text>
-        </Navbar.Collapse>
-      </Container>
-    </Navbar>
-    {seriesList.map((series: SeriesInfo) => {
-      return (
-        <div key={series.seriesId}>
-          <TimeSeries seriesId={series.seriesId} seriesName={series.name} socket={ws.current} startActive={false}></TimeSeries>
-        </div>
-      )
-    })}
-    <Footer name="Eduardo Lalor" link="https://github.com/Dwape" />
-  </>);
+  return (
+    <div className="app">
+      <Navbar sticky="top" className="bg-dark navbar-dark">
+        <Container>
+          <Navbar.Brand href="">
+            <FaChartLine className="logo" />{' '}
+            TimeSeries Dashboard
+          </Navbar.Brand>
+          <Navbar.Collapse className="justify-content-end">
+            <Navbar.Text>
+              <ConnectionIndicator connected={isConnected} />
+            </Navbar.Text>
+            <Navbar.Text>
+              <ThroughputIndicator messageAmount={50} socket={ws.current}></ThroughputIndicator>
+            </Navbar.Text>
+          </Navbar.Collapse>
+        </Container>
+      </Navbar>
+      {seriesList.map((series: SeriesInfo) => {
+        return (
+          <div key={series.seriesId}>
+            <TimeSeries seriesId={series.seriesId} seriesName={series.name} socket={ws.current} startActive={false}></TimeSeries>
+          </div>
+        )
+      })}
+      <Footer name="Eduardo Lalor" link="https://github.com/Dwape" />
+    </div>);
 }
 
 /*
@@ -93,7 +94,7 @@ const Footer = memo(function Footer({ name, link }: { name: string, link: string
   return (
     <Nav className="bg-dark justify-content-center">
       <Nav.Item className="footer-item">
-        <span className="footer-text">by {name}</span>
+        <span className="footer-text">created by {name}</span>
         <FaGithub className="footer-text footer-icon" />
         <a className="footer-text" href={link} target="_blank">Dwape</a>
       </Nav.Item>

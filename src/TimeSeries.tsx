@@ -1,6 +1,7 @@
 import { useState, useEffect, memo, useCallback, useMemo } from 'react';
 import { Socket, SeriesUpdate } from './socket'
 import Button from 'react-bootstrap/Button';
+import Card from 'react-bootstrap/Card';
 import { Line } from 'react-chartjs-2';
 import { chartOptions } from './options';
 import { FaPlay, FaPause } from "react-icons/fa";
@@ -105,14 +106,16 @@ export default function TimeSeries({ seriesId, seriesName, socket, startActive }
     }, [socket, active]);
 
     return (
-        <div className="time-series">
-            <div className="chart-header">
-                <h3>{seriesName}</h3>
-                <span className="average">Average: ${average.toLocaleString([], { maximumFractionDigits: 3 })}</span>
-                <PlayButton onClick={handleToggle} active={active}></PlayButton>
-            </div>
-            <Line options={chartOptions} data={parsedData} />
-        </div>
+        <Card className="time-series">
+            <Card.Body>
+                <div className="chart-header">
+                    <h3 className="series-title">{seriesName}</h3>
+                    <span className="average">Average: ${average.toLocaleString([], { maximumFractionDigits: 3 })}</span>
+                    <PlayButton onClick={handleToggle} active={active}></PlayButton>
+                </div>
+                <Line options={chartOptions} data={parsedData} />
+            </Card.Body>
+        </Card>
     );
 }
 
