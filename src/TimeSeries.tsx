@@ -1,4 +1,4 @@
-import { useState, useEffect, memo, useCallback } from 'react';
+import { useState, useEffect, memo, useCallback, useMemo } from 'react';
 import { Socket, SeriesUpdate } from './socket'
 import Button from 'react-bootstrap/Button';
 import { Line } from 'react-chartjs-2';
@@ -33,6 +33,7 @@ export default function TimeSeries({ seriesId, seriesName, socket, startActive }
     // Data is saved in a convenient, normalized format for display, so that it won't have to be calculated every render.
     const [data, setData] = useState<DataPoint[]>([]);
     const [active, setActive] = useState(false);
+    const average = useMemo(() => calculateAverage(data), [data]);
 
     useEffect(() => {
         // Subscribes to updates on mount.
@@ -71,7 +72,7 @@ export default function TimeSeries({ seriesId, seriesName, socket, startActive }
     /*
     Calculate the average of graphed values avoiding an overflow if values are close to the maximum allowed value.
     */
-    function calculateAverage(): number {
+    function calculateAverage(data: DataPoint[]) {
         /*
         if (data.values.length < 1) return 0;
         return data.values.reduce((a, b) => a + b, 0) / data.values.length;
@@ -107,7 +108,7 @@ export default function TimeSeries({ seriesId, seriesName, socket, startActive }
         <div className="time-series">
             <div className="chart-header">
                 <h3>{seriesName}</h3>
-                <span className="average">Average: ${calculateAverage().toLocaleString([], { maximumFractionDigits: 3 })}</span>
+                <span className="average">Average: ${average.toLocaleString([], { maximumFractionDigits: 3 })}</span>
                 <PlayButton onClick={handleToggle} active={active}></PlayButton>
             </div>
             <Line options={chartOptions} data={parsedData} />

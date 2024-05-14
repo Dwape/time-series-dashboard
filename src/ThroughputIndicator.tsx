@@ -47,8 +47,10 @@ export default function ThroughputIndicator({ messageAmount, socket }: { message
     }
 
     return (
-        <div className="throughput">{throughput.toFixed(2)} {throughputUnit}</div>
+        <div>
+            <span className="throughput">{throughput.toFixed(2)} {throughputUnit}</span>
+        </div>
     );
 }
 
-const throughputUnit: string = 'messages/millisecond';
+const throughputUnit: string = 'messages/ms';

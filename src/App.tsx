@@ -94,7 +94,7 @@ const Footer = memo(function Footer({ name, link }: { name: string, link: string
     <Nav className="bg-dark justify-content-center">
       <Nav.Item className="footer-item">
         <span className="footer-text">by {name}</span>
-        <FaGithub className="footer-text" />
+        <FaGithub className="footer-text footer-icon" />
         <a className="footer-text" href={link} target="_blank">Dwape</a>
       </Nav.Item>
     </Nav>

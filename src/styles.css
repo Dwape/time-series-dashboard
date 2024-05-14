@@ -9,6 +9,7 @@
 .connection {
     margin-right: 0.5em;
     margin-left: 0.5em;
+    vertical-align: -10%;
 }
 
 .logo {
@@ -17,6 +18,7 @@
 
 .throughput {
     font-family: monospace;
+    white-space: nowrap;
 }
 
 .time-series {
@@ -42,6 +44,7 @@
 
 .button-icon {
     font-size: 0.9em;
+    vertical-align: -7%;
 }
 
 .footer-text {
@@ -53,4 +56,8 @@
 .footer-item {
     padding-top: 1em;
     padding-bottom: 1em;
+}
+
+.footer-icon {
+    vertical-align: text-top;
 }
