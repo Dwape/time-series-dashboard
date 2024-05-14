@@ -1,5 +1,5 @@
 .connected {
-    color: rgb(56, 222, 41);
+    color: rgb(47, 193, 34);
 }
 
 .disconnected {
@@ -42,4 +42,15 @@
 
 .button-icon {
     font-size: 0.9em;
+}
+
+.footer-text {
+    color: white;
+    margin-right: 0.2em;
+    margin-left: 0.2em;
+}
+
+.footer-item {
+    padding-top: 1em;
+    padding-bottom: 1em;
 }

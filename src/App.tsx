@@ -2,11 +2,11 @@ import './styles.css'
 import Container from 'react-bootstrap/Container';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, memo } from 'react';
 import { Socket, SeriesInfo, SeriesInfoList } from './socket'
 import TimeSeries from './TimeSeries';
 import ThroughputIndicator from './ThroughputIndicator';
-import { FaCircle, FaChartLine } from "react-icons/fa";
+import { FaCircle, FaChartLine, FaGithub } from "react-icons/fa";
 
 /*
 An application that connects to a WebSocket server and handles real-time stock-price updates.
@@ -51,7 +51,7 @@ export default function App() {
   }, [isConnected]);
 
   return (<>
-    <Navbar sticky="top" className="bg-body-tertiary">
+    <Navbar sticky="top" className="bg-dark navbar-dark">
       <Container>
         <Navbar.Brand href="">
           <FaChartLine className="logo" />{' '}
@@ -74,6 +74,7 @@ export default function App() {
         </div>
       )
     })}
+    <Footer name="Eduardo Lalor" link="https://github.com/Dwape" />
   </>);
 }
 
@@ -81,6 +82,21 @@ export default function App() {
 A simple indicator component with two states, connected or disconnected.
 Displays an icon with a different color for each state.
 */
-function ConnectionIndicator({ connected }: { connected: boolean }) {
+const ConnectionIndicator = memo(function ConnectionIndicator({ connected }: { connected: boolean }) {
   return (<FaCircle className={'connection' + (connected ? ' connected' : ' disconnected')} />);
-}
+});
+
+/*
+A footer for the page displaying basic information about the app's creator.
+*/
+const Footer = memo(function Footer({ name, link }: { name: string, link: string }) {
+  return (
+    <Nav className="bg-dark justify-content-center">
+      <Nav.Item className="footer-item">
+        <span className="footer-text">by {name}</span>
+        <FaGithub className="footer-text" />
+        <a className="footer-text" href={link} target="_blank">Dwape</a>
+      </Nav.Item>
+    </Nav>
+  );
+});

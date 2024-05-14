@@ -88,7 +88,7 @@ export default function TimeSeries({ seriesId, seriesName, socket, startActive }
         datasets: [{
             data: data,
             fill: false,
-            borderColor: 'rgb(75, 192, 192)', // Style should be set elsewhere
+            borderColor: 'rgb(47, 193, 34)',
         }]
     }
 
@@ -120,7 +120,7 @@ A component which consists of a button which can be used to start or stop data s
 */
 const PlayButton = memo(function PlayButton({ active, onClick }: { active: boolean, onClick: () => void }) {
     return (
-        <Button onClick={onClick} className="chart-button">
+        <Button onClick={onClick} className="chart-button" variant="dark">
             {active ? <FaPause className="button-icon" /> : <FaPlay className="button-icon" />}
         </Button>
     );
