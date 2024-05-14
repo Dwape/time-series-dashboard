@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, memo, useCallback } from 'react';
 import { Socket, SeriesUpdate } from './socket'
 import Button from 'react-bootstrap/Button';
 import { Line } from 'react-chartjs-2';
@@ -95,27 +95,36 @@ export default function TimeSeries({ seriesId, seriesName, socket, startActive }
     /*
     Toggles between receiving and not receiving information for a series.
     */
-    function handleToggle() {
+    const handleToggle = useCallback(() => {
         if (socket !== null) {
             if (active) socket.unsubscribeToUpdate(seriesId);
             else socket.subscribeToUpdate(seriesId, onSeriesUpdate);
             setActive(a => !a);
         }
-    }
+    }, [socket, active]);
 
     return (
         <div className="time-series">
             <div className="chart-header">
                 <h3>{seriesName}</h3>
                 <span className="average">Average: ${calculateAverage().toLocaleString([], { maximumFractionDigits: 3 })}</span>
-                <Button onClick={handleToggle} className="chart-button">
-                    {active ? <FaPause className="button-icon" /> : <FaPlay className="button-icon" />}
-                </Button>
+                <PlayButton onClick={handleToggle} active={active}></PlayButton>
             </div>
             <Line options={chartOptions} data={parsedData} />
         </div>
     );
 }
+
+/*
+A component which consists of a button which can be used to start or stop data streaming.
+*/
+const PlayButton = memo(function PlayButton({ active, onClick }: { active: boolean, onClick: () => void }) {
+    return (
+        <Button onClick={onClick} className="chart-button">
+            {active ? <FaPause className="button-icon" /> : <FaPlay className="button-icon" />}
+        </Button>
+    );
+})
 
 type DataPoint = {
     x: string,

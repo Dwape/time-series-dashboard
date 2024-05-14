@@ -23,7 +23,7 @@ export class Socket {
             onConnect();
         }
 
-        this.ws.onerror = onDisconnect; // Remove, only for testing.
+        this.ws.onerror = onDisconnect;
 
         /*
         `onMessage` function which assumes all messages received are updates.
@@ -31,8 +31,12 @@ export class Socket {
         */
         const onFollowingMessages = (event: MessageEvent) => {
             const message = JSON.parse(event.data);
-            this.updateSubscribers.get(message.seriesId)!(message);
-            this.throughputSubscriber(message.ts);
+            try {
+                this.updateSubscribers.get(message.seriesId)!(message);
+                this.throughputSubscriber(message.ts);
+            } catch (error) {
+                console.log(error);
+            }
         }
 
         // `onMessage` function for the first message, which should contain a list with the different series.
